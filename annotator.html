@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script type="text/javascript">
+
+var labels = ["head","right_hand","right_elbow","right_shoulder","neck", "left_shoulder","left_elbow","left_hand",
+"right_foot","right_knee","right_hip","left_hip","left_knee","left_foot"];
+
+var canvas;
+var points = new Array();
+var complete = false;
+var ctx;
+
+function point_it(event) {
+    if(complete){
+        alert('Done!');
+        return false;
+    }
+    var x,y;
+    if(event.which===3){
+        x=-1;
+        y=-1;
+        points.push({'x':x,'y':y});
+    }
+    else{
+        var rect = canvas.getBoundingClientRect();
+        x = event.clientX - Math.round(rect.left);
+        y = event.clientY - Math.round(rect.top);
+        points.push({'x':x,'y':y});
+        draw();
+    }
+    if(points.length==labels.length){
+        complete=true;
+        document.getElementById("next").innerHTML="Done";
+        $("#submitButton").removeAttr("disabled");
+    }
+    else{
+        document.getElementById("next").innerHTML=labels[points.length];
+    }
+}
+
+function draw(){
+    for(var i=0; i<points.length; i++){
+        point(points[i]['x'],points[i]['y']);
+    }
+    if(points.length == 0){
+        document.getElementById('coordinates').value = '';
+    } else {
+        var string="";
+        for(var i=0; i<points.length; i++){
+            string+=points[i]['x'] + "," + points[i]['y'] + ";"
+        }
+        string = string.substring(0,string.length - 1)
+        document.getElementById('coordinates').value = string;
+    }
+}
+
+function undo(){
+    ctx = undefined;
+    points.pop();
+    complete = false;
+    $("#submitButton").attr("disabled", "disabled");
+    start(true);
+}
+
+function point(x, y){
+    ctx.fillStyle="white";
+    ctx.strokeStyle = "white";
+    ctx.fillRect(x-2,y-2,4,4);
+}
+
+function clear_canvas(){
+    ctx = undefined;
+    points = new Array();
+    complete = false;
+    $("#submitButton").attr("disabled", "disabled");
+    document.getElementById('coordinates').value = '';
+    start();
+}
+
+function start() {
+    canvas = document.getElementById("jPolygon");
+    var img = new Image();
+    img.src = canvas.getAttribute('data-imgsrc');
+    img.onload = function(){
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        draw();
+        document.getElementById("next").innerHTML=labels[points.length];
+    }
+}
+
+</script>
+
+</head>
+
+<body>
+<div style="display:inline-block;vertical-align:top;">
+<h1>Annotate body joints in depth-channel infant images</h1>
+
+<ul>
+<li>Please annotate body joints using <b>mouse left button</b> to click on it.</li>
+    <li>Important: Respect the order as given below, the next point to annotate is suggested by the red label. </li>
+    <li>If a joint is not fully visible use the <b>mouse right button</b> to skip it.</li>
+    <li>You can remove the last point by clicking the <b>Undo button.</b></li>
+    <li>You can clear all points and restart by clicking on the <b>Reset button</b></li>
+</ul>
+
+<h2 id="next" style="color:red">placeholder</h2>
+
+<p><input id="coordinates" name="coordinates" type="hidden" /></p>
+</div>
+
+<p id="buttons"><input id="undo_button" type="button" value="Undo" /> <input id="reset_button" type="Reset" value="Reset" /></p>
+
+<div id="imgframe" style="float:left">
+<p><canvas data-imgsrc="${img_url}" id="jPolygon" oncontextmenu="return false;" onmousedown="point_it(event)" style="cursor:crosshair"> Your browser does not support the HTML5 canvas tag. </canvas></p>
+</div>
+<script type="text/javascript">
+       
+        $(document).ready(function(){
+            var points = new Array();
+            var complete = false;
+            var canvas = document.getElementById("jPolygon");
+            var img = new Image();
+            img.src = canvas.getAttribute('data-imgsrc');
+            
+            clear_canvas();
+            $("#reset_button").click(function(e) {
+                 clear_canvas();
+            });
+            $("#undo_button").click(function(e) {
+                 undo();
+            });
+            $("#submitButton").attr("disabled", "disabled");
+            $("#submitButton").detach().appendTo("#buttons");
+        });
+</script>
+</body>
+</html>
